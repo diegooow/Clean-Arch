@@ -21,7 +21,11 @@ namespace CleanArchMvc.Infra.IoC
             services.AddScoped<IProductRepository,ProductRepository>();
             services.AddScoped<ICategoryRepository,CategoryRepository>();
 
-            SQLitePCL.Batteries.Init();
+            using (var serviceScope = services.BuildServiceProvider().CreateScope())
+            {
+                var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                context.Database.Migrate();
+            }
             
             return services;
         }
