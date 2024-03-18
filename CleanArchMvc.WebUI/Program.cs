@@ -1,4 +1,4 @@
-using  CleanArchMvc.Infra.IoC;
+using CleanArchMvc.Infra.IoC;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,8 +28,12 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Categories}/{action=Index}/{id?}"
+    );
+});
 
 app.Run();
