@@ -1,14 +1,14 @@
+using CleanArchMvc.Application.DTOs;
 using CleanArchMvc.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
+
 namespace CleanArchMvc.WebUI.Controllers
 {
-    [Route("[controller]")]
-    public class CategoryController : Controller
+    public class CategoriesController : Controller
     {
         private readonly ICategoryService _categoryService;
-
-        public CategoryController(ICategoryService categoryService)
+        public CategoriesController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
         }
@@ -19,7 +19,5 @@ namespace CleanArchMvc.WebUI.Controllers
             var categories = await _categoryService.GetCategories();
             return View(categories);
         }
-
-        
     }
 }
