@@ -1,114 +1,85 @@
-﻿using CleanArchMvc.Application.DTOs;
+﻿﻿using CleanArchMvc.Application.DTOs;
 using CleanArchMvc.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CleanArchMvc.WebUI.Controllers
+namespace CleanArchMvc.API.Controllers
 {
-    public class ProductsController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    [Produces("application/json")]
+    public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly ICategoryService _categoryService;
-        private readonly IWebHostEnvironment _environment;
-
-        public ProductsController(IProductService productAppService,
-            ICategoryService categoryService, IWebHostEnvironment environment)
+       public ProductsController(IProductService productService)
         {
-            _productService = productAppService;
-            _categoryService = categoryService;
-            _environment = environment;
-
-
+            _productService = productService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> Get()
         {
-            var products = await _productService.GetProducts();
-            return View(products);
+            var produtos = await _productService.GetProducts();
+            if (produtos == null)
+            {
+                return NotFound("Products not found");
+            }
+            return Ok(produtos);
         }
 
-        [HttpGet()]
-        public async Task<IActionResult> Create()
+        [HttpGet("{id}", Name = "GetProduct")]
+        public async Task<ActionResult<ProductDTO>> Get(int id)
         {
-            ViewBag.CategoryId =
-            new SelectList(await _categoryService.GetCategories(), "Id", "Name");
-
-            return View();
+            var produto = await _productService.GetById(id);
+            if (produto == null)
+            {
+                return NotFound("Product not found");
+            }
+            return Ok(produto);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(ProductDTO productDto)
+        public async Task<ActionResult> Post([FromBody] ProductDTO produtoDto)
         {
-            if (ModelState.IsValid)
+            if (produtoDto == null)
+                return BadRequest("Data Invalid");
+
+            await _productService.Add(produtoDto);
+
+            return new CreatedAtRouteResult("GetProduct",
+                new { id = produtoDto.Id }, produtoDto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Put(int id, [FromBody] ProductDTO produtoDto)
+        {
+            if (id != produtoDto.Id)
             {
-                await _productService.Add(productDto);
-                return RedirectToAction(nameof(Index));
+                return BadRequest("Data invalid");
             }
-            return View(productDto);
+
+            if (produtoDto == null)
+                return BadRequest("Data invalid");
+
+            await _productService.Update(produtoDto);
+
+            return Ok(produtoDto);
         }
 
-        [HttpGet()]
-        public async Task<IActionResult> Edit(int? id)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ProductDTO>> Delete(int id)
         {
-            if (id == null) return NotFound();
-            var productDto = await _productService.GetById(id);
+            var produtoDto = await _productService.GetById(id);
 
-            if (productDto == null) return NotFound();
-
-            var categories = await _categoryService.GetCategories();
-            ViewBag.CategoryId = new SelectList(categories, "Id", "Name", productDto.CategoryId);
-
-            return View(productDto);
-        }
-
-        [HttpPost()]
-        public async Task<IActionResult> Edit(ProductDTO productDto)
-        {
-            if (ModelState.IsValid)
+            if (produtoDto == null)
             {
-                await _productService.Update(productDto);
-                return RedirectToAction(nameof(Index));
+                return NotFound("Product not found");
             }
-            return View(productDto);
-        }
 
-        [HttpGet()]
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var productDto = await _productService.GetById(id);
-
-            if (productDto == null) return NotFound();
-
-            return View(productDto);
-        }
-
-        [HttpPost(), ActionName("Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
             await _productService.Delete(id);
-            return RedirectToAction("Index");
-        }
 
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-            var productDto = await _productService.GetById(id);
-
-            if (productDto == null) return NotFound();
-            var wwwroot = _environment.WebRootPath;
-            var image = Path.Combine(wwwroot, "images\\" + productDto.Image);
-            var exists = System.IO.File.Exists(image);
-            ViewBag.ImageExist = exists;
-
-            return View(productDto);
+            return Ok(produtoDto);
         }
     }
 }
